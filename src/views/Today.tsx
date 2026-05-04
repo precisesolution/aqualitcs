@@ -116,6 +116,26 @@ export function Today() {
                           </span>
                         )}
                       </div>
+                      {c.talkingPoints && c.talkingPoints.length > 0 && (
+                        <ul className="mt-2 pl-1 space-y-0.5">
+                          {c.talkingPoints.slice(0, 2).map((tp, i) => (
+                            <li key={i} className="text-[12px] text-ink-700 flex gap-1.5 leading-snug">
+                              <span className="text-wave-500 font-bold">→</span>
+                              <span className="line-clamp-1">{tp}</span>
+                            </li>
+                          ))}
+                          {c.talkingPoints.length > 2 && (
+                            <li className="text-[11px] text-ink-400 pl-3">
+                              +{c.talkingPoints.length - 2} more
+                            </li>
+                          )}
+                        </ul>
+                      )}
+                      {c.updates && c.updates.length > 0 && (
+                        <p className="mt-1.5 text-[11px] text-emerald-700 italic line-clamp-1">
+                          Last update: {c.updates[0].text}
+                        </p>
+                      )}
                     </div>
                     <ChevronRight className="w-4 h-4 text-ink-300 mt-1 shrink-0" />
                   </button>

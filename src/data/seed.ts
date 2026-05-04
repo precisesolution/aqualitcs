@@ -22,6 +22,12 @@ export const SEED_CONTACTS: Contact[] = [
     ],
     opener:
       "Hi Professor Packman — I'm a student helping a mentor named Philipp Grötsch. He's commercializing a continuous water-quality sensor at ~10% the cost of existing instruments. Your community-centered nature-based monitoring paper this year describes exactly the deployment context he's trying to understand. Could I get 25 minutes for a call with him in the next two weeks?",
+    talkingPoints: [
+      "Your 2024 community-centered monitoring paper — what's the bottleneck on getting more in-situ data into stormwater control loops?",
+      "Would a continuous instrument at 10% the cost change which neighborhoods you can actually deploy in?",
+      "SAVEUR / Array of Things — could Aqualytics' instrument fit that integration model, or is it a different category?",
+      "Who else at NU should we talk to first? You know the fastest-yes/best-fit people across NU Water's 50+ affiliates.",
+    ],
     notes: 'Single most important conversation. Likely opens doors to other 50+ NU Water affiliates.',
     source: 'https://water.northwestern.edu/about/',
     status: 'To contact',
@@ -47,6 +53,12 @@ export const SEED_CONTACTS: Contact[] = [
     ],
     opener:
       "The nitrate-monitoring example in my mentor's deck — Mississippi USGS-gage gaps — your nutrient-cycling work hits that exact gap. Would a 25-min call with Philipp work?",
+    talkingPoints: [
+      "The deck's Mississippi nitrate example — does your nutrient-cycling work see the same monitoring gaps?",
+      "What organic contaminants do you wish there was a continuous in-situ readout for that doesn't exist today?",
+      "Would TNC-style buyers actually pay for sub-USGS-grade data if it were 1/10 the cost?",
+      "P-cycling iron-oxide finding — does that imply specific instrument needs in restoration projects?",
+    ],
     source: 'https://water.northwestern.edu/about/',
     status: 'To contact',
     owner: 'Unassigned',
@@ -70,6 +82,12 @@ export const SEED_CONTACTS: Contact[] = [
     ],
     opener:
       "My mentor's company targets utilities. Your MWRD-Chicago work is the closest thing I've seen to that buyer profile. What do operators actually want from a continuous nutrient sensor that costs 10% of current options?",
+    talkingPoints: [
+      "MWRD operators specifically — what would they actually do with continuous nutrient data they don't have today?",
+      "The $2.7M ARPA-E grant — is there an instrument that would have changed your proposal?",
+      "Utilities buying for compliance vs. for optimization — which one is the bigger story for a 10x cheaper sensor?",
+      "Anammox processes — what's the highest-value variable to monitor continuously at the mainstream tier?",
+    ],
     source: 'https://www.wells.northwestern.edu/',
     status: 'To contact',
     owner: 'Unassigned',
@@ -94,6 +112,12 @@ export const SEED_CONTACTS: Contact[] = [
     ],
     opener:
       "Your rain-garden ML paper last fall — is the bottleneck data on what's actually happening in the soil/water column? My mentor's instrument is built for exactly that gap.",
+    talkingPoints: [
+      "Your rain-garden ML paper — bottleneck on data about what's happening in the soil/water column. Which variables, specifically?",
+      "Restoration firms — are they buying instruments today, or paying labs for grab samples? Why hasn't that flipped?",
+      "Native deep-rooted plants stormwater work — what would continuous monitoring tell you that grab samples can't?",
+      "$2M LEAP HI grant — was sensing/data ever the limiting factor for the questions you wanted to ask?",
+    ],
     source: 'https://www.mccormick.northwestern.edu/research-faculty/directory/profiles/gray-kimberly.html',
     status: 'To contact',
     owner: 'Unassigned',
@@ -120,6 +144,12 @@ export const SEED_CONTACTS: Contact[] = [
     ],
     opener:
       "I'm here because the Cave Pearl Project showed low-cost open-source water sensors actually work. My mentor at Aqualytics is doing the commercial-instrument version of the same idea. He'd love your honest read on the Frankenstein-build vs. polished-commercial-product tradeoff.",
+    talkingPoints: [
+      "Cave Pearl Project — what stopped it from going commercial? Is the value really in open-source ethos vs. polished product?",
+      "Where does the $15 underwater housing fall short? Which sensor types couldn't you get to work cheaply?",
+      "Citizen-science deployments — who actually keeps these working in the field over time? What breaks first?",
+      "If you redid the project today, what would you change about the form factor / data pipeline?",
+    ],
     source: 'https://deeps.northwestern.edu/our-people/faculty/beddows-patricia.html',
     status: 'To contact',
     owner: 'Unassigned',
@@ -145,6 +175,12 @@ export const SEED_CONTACTS: Contact[] = [
     ],
     opener:
       "Hi Professor Horton — caught you right after class. Quick: my mentor builds water-quality instruments and pairs them with satellite proxies. Your group does ML on environmental observations. Could a 25-min call be useful to him?",
+    talkingPoints: [
+      "ML on environmental observations — are you starved for ground-truth data when calibrating satellite proxies?",
+      "Which water-related variables could a 10x cheaper in-situ instrument unlock for your group?",
+      "CMIP6 paper — what's your dream environmental dataset that doesn't exist today?",
+      "Defusing Disasters working group — is sensing infrastructure ever the bottleneck for the disaster-response questions you ask?",
+    ],
     source: 'https://sites.northwestern.edu/danethan/',
     status: 'To contact',
     owner: 'Unassigned',
@@ -168,6 +204,12 @@ export const SEED_CONTACTS: Contact[] = [
     ],
     opener:
       "I'm helping a mentor commercializing a continuous water-quality sensor at ~10% of current pricing. You've lived this with Stemloop — would a 25-minute conversation in the next two weeks work?",
+    talkingPoints: [
+      "Stemloop pricing curve — what surprised you about Kenya field deployment costs? What didn't?",
+      "Cell-free biosensors vs. optical/electrochemical — where do the use cases overlap, where don't they?",
+      "If you started Stemloop today with current capital markets, what would you do differently?",
+      "Distribution — how did you find your first non-academic users? Was it pull or push?",
+    ],
     source: 'https://luckslab.org/',
     status: 'To contact',
     owner: 'Unassigned',
