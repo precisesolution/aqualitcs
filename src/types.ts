@@ -63,6 +63,8 @@ export interface Contact {
   whyFit: string;
   papers?: Paper[];
   opener?: string;
+  talkingPoints?: string[];
+  updates?: UpdateEntry[];
   notes?: string;
   source?: string;
   alreadyContacted?: boolean;
@@ -72,6 +74,15 @@ export interface Contact {
   lastTouch?: string;
   walkInTimeBlock?: 'morning' | 'afternoon-A' | 'afternoon-F' | 'late';
   walkInDay?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+}
+
+export type UpdateKind = 'walk-in' | 'email' | 'reply' | 'meeting' | 'note';
+
+export interface UpdateEntry {
+  id: string;
+  timestamp: string;
+  kind: UpdateKind;
+  text: string;
 }
 
 export interface Meeting {
@@ -88,4 +99,5 @@ export interface ContactPatch {
   notes?: string;
   lastTouch?: string;
   meeting?: Meeting | null;
+  updates?: UpdateEntry[];
 }
