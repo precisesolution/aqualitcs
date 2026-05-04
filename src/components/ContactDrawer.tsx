@@ -10,6 +10,7 @@ import {
   Plus,
   Copy,
   Sparkles,
+  FileText,
 } from 'lucide-react';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import type { Owner, Status, UpdateKind } from '../types';
@@ -17,6 +18,7 @@ import { STATUS_OPTIONS, UPDATE_KINDS, useStore } from '../data/store';
 import { FitBadge, StatusBadge } from './Badges';
 import { DraftEmailModal } from './DraftEmailModal';
 import { EmailAgentPanel } from './EmailAgentPanel';
+import { BriefingDocModal } from './BriefingDocModal';
 
 const OWNERS: Owner[] = ['Me', 'Collaborator', 'Unassigned'];
 
@@ -101,6 +103,7 @@ export function ContactDrawer({ contactId, onClose }: Props) {
 
   const updates = contact.updates ?? [];
   const [draftOpen, setDraftOpen] = useState(false);
+  const [briefingOpen, setBriefingOpen] = useState(false);
 
   return (
     <>
@@ -125,12 +128,14 @@ export function ContactDrawer({ contactId, onClose }: Props) {
               <X className="w-5 h-5" />
             </button>
           </div>
-          <button
-            onClick={() => setDraftOpen(true)}
-            className="btn-primary w-full mt-3"
-          >
-            <Sparkles className="w-4 h-4" /> Draft email with AI
-          </button>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <button onClick={() => setDraftOpen(true)} className="btn-primary">
+              <Sparkles className="w-4 h-4" /> Draft email
+            </button>
+            <button onClick={() => setBriefingOpen(true)} className="btn-outline">
+              <FileText className="w-4 h-4" /> Briefing doc
+            </button>
+          </div>
         </div>
 
         <div className="p-6 space-y-7">
@@ -409,6 +414,9 @@ export function ContactDrawer({ contactId, onClose }: Props) {
         </div>
       </aside>
       {draftOpen && <DraftEmailModal contact={contact} onClose={() => setDraftOpen(false)} />}
+      {briefingOpen && (
+        <BriefingDocModal contact={contact} onClose={() => setBriefingOpen(false)} />
+      )}
     </>
   );
 }
