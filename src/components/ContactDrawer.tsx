@@ -16,6 +16,7 @@ import type { Owner, Status, UpdateKind } from '../types';
 import { STATUS_OPTIONS, UPDATE_KINDS, useStore } from '../data/store';
 import { FitBadge, StatusBadge } from './Badges';
 import { DraftEmailModal } from './DraftEmailModal';
+import { EmailAgentPanel } from './EmailAgentPanel';
 
 const OWNERS: Owner[] = ['Me', 'Collaborator', 'Unassigned'];
 
@@ -26,6 +27,7 @@ const KIND_STYLES: Record<UpdateKind, string> = {
   reply: 'bg-sky-50 text-sky-700 border-sky-200',
   meeting: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   note: 'bg-ink-50 text-ink-600 border-ink-200',
+  system: 'bg-ink-50 text-ink-400 border-ink-200',
 };
 
 interface Props {
@@ -214,6 +216,8 @@ export function ContactDrawer({ contactId, onClose }: Props) {
               ))}
             </div>
           </Section>
+
+          <EmailAgentPanel contact={contact} />
 
           {(contact.talkingPoints?.length || contact.opener) && (
             <Section step={4} title="What to talk about">

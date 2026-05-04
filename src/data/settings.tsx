@@ -10,6 +10,12 @@ const DEFAULT: Settings = {
   userSignature: '',
   voiceSamples: '',
   fromEmail: '',
+  googleClientId: '',
+  googleAccessToken: undefined,
+  googleAccessTokenExpiry: undefined,
+  googleEmail: undefined,
+  meetDurationMinutes: 25,
+  meetTimezone: typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'America/Chicago',
 };
 
 function load(): Settings {

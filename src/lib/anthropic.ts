@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { Contact, EmailDraft, Settings } from '../types';
+import type { Contact, EmailDraft, ReplyClassification, ReplyIntent, Settings } from '../types';
 
 function buildSystemPrompt(settings: Settings): string {
   const userName = settings.userName.trim() || '[Your name]';
@@ -143,6 +143,166 @@ export async function draftEmail(
     throw new Error('Model response was missing subject or body.');
   }
   return parsed;
+}
+
+export interface ClassifyReplyInput {
+  contactName: string;
+  contactTitle: string;
+  whyFit: string;
+  myDraftSubject: string;
+  myDraftBody: string;
+  reply: string;
+}
+
+export async function classifyReply(
+  input: ClassifyReplyInput,
+  settings: Settings
+): Promise<ReplyClassification> {
+  if (!settings.apiKey) throw new Error('No Anthropic API key set.');
+  const client = getClient(settings.apiKey);
+
+  const systemPrompt = `You are an assistant that reads professor replies to outreach emails and classifies the reply.
+
+The outreach is about scheduling a 25-minute discovery conversation with Philipp Grötsch (Aqualytics, water-quality monitoring).
+
+Return STRICT JSON with these fields:
+- "intent": one of "yes" | "no" | "reschedule" | "redirect" | "info" | "unclear"
+  - "yes" = they accepted or proposed concrete times
+  - "no" = they declined
+  - "reschedule" = they responded but want a different time / pushed back the timeline
+  - "redirect" = they suggested someone else instead of themselves
+  - "info" = they asked for more info or the deck before deciding
+  - "unclear" = anything else
+- "summary": one short sentence summarizing what they said
+- "suggestedAction": one short sentence describing what to do next (the most useful next step you the assistant can take)
+- "proposedTimes": array of human-readable time strings if they proposed any concrete times (e.g. "Wednesday May 6 at 2pm CT", "Thursday afternoon"); empty array if none
+
+Return JSON only, no commentary.`;
+
+  const userPrompt = `# Contact
+${input.contactName} — ${input.contactTitle}
+Why-fit: ${input.whyFit}
+
+# My outreach email
+Subject: ${input.myDraftSubject}
+
+${input.myDraftBody}
+
+# Their reply
+"""
+${input.reply}
+"""
+
+Classify the reply.`;
+
+  const response = await client.messages.create({
+    model: settings.model || 'claude-opus-4-7',
+    max_tokens: 600,
+    system: [
+      { type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } },
+    ],
+    messages: [{ role: 'user', content: userPrompt }],
+    output_config: {
+      format: {
+        type: 'json_schema',
+        schema: {
+          type: 'object',
+          properties: {
+            intent: { type: 'string', enum: ['yes', 'no', 'reschedule', 'redirect', 'info', 'unclear'] },
+            summary: { type: 'string' },
+            suggestedAction: { type: 'string' },
+            proposedTimes: { type: 'array', items: { type: 'string' } },
+          },
+          required: ['intent', 'summary', 'suggestedAction', 'proposedTimes'],
+          additionalProperties: false,
+        },
+      },
+    },
+  } as Anthropic.MessageCreateParamsNonStreaming);
+
+  const text = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
+  if (!text) throw new Error('Classifier returned no text.');
+  const parsed = JSON.parse(text.text) as ReplyClassification;
+  return {
+    intent: parsed.intent as ReplyIntent,
+    summary: parsed.summary,
+    suggestedAction: parsed.suggestedAction,
+    proposedTimes: parsed.proposedTimes ?? [],
+  };
+}
+
+export interface PickTimeInput {
+  proposedTimes: string[];
+  busySlots: { start: string; end: string }[];
+  durationMinutes: number;
+  searchStartISO: string;
+  searchEndISO: string;
+  timezone: string;
+}
+
+export interface PickedSlot {
+  startISO: string;
+  endISO: string;
+  reasoning: string;
+}
+
+export async function pickMeetingTime(
+  input: PickTimeInput,
+  settings: Settings
+): Promise<PickedSlot> {
+  if (!settings.apiKey) throw new Error('No Anthropic API key set.');
+  const client = getClient(settings.apiKey);
+  const systemPrompt = `You pick the best meeting slot given the recipient's stated time preferences and the user's calendar busy slots.
+
+Pick a 30-minute slot (or whatever durationMinutes is) that:
+- Falls inside searchStartISO–searchEndISO
+- Does NOT overlap any busy slot (use the busy slots as hard constraints)
+- Best matches the recipient's proposed times if they gave any
+- Falls on weekdays during reasonable working hours in the given timezone (8 am – 6 pm)
+
+Return strict JSON:
+- startISO: ISO 8601 datetime with timezone offset
+- endISO: ISO 8601 datetime with timezone offset (start + durationMinutes)
+- reasoning: one short sentence explaining the choice
+
+Return JSON only.`;
+  const userPrompt = `Now: ${new Date().toISOString()}
+Timezone: ${input.timezone}
+Duration: ${input.durationMinutes} minutes
+Search window: ${input.searchStartISO} to ${input.searchEndISO}
+Recipient proposed times: ${JSON.stringify(input.proposedTimes)}
+Calendar busy slots:
+${input.busySlots.map((b) => `  - ${b.start} → ${b.end}`).join('\n') || '  (none)'}
+
+Pick the best slot.`;
+
+  const response = await client.messages.create({
+    model: settings.model || 'claude-opus-4-7',
+    max_tokens: 500,
+    system: [
+      { type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } },
+    ],
+    messages: [{ role: 'user', content: userPrompt }],
+    output_config: {
+      format: {
+        type: 'json_schema',
+        schema: {
+          type: 'object',
+          properties: {
+            startISO: { type: 'string' },
+            endISO: { type: 'string' },
+            reasoning: { type: 'string' },
+          },
+          required: ['startISO', 'endISO', 'reasoning'],
+          additionalProperties: false,
+        },
+      },
+    },
+  } as Anthropic.MessageCreateParamsNonStreaming);
+
+  const text = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
+  if (!text) throw new Error('Time-picker returned no text.');
+  return JSON.parse(text.text) as PickedSlot;
 }
 
 export async function testApiKey(apiKey: string, model: string): Promise<{ ok: true; cached?: boolean } | { ok: false; error: string }> {

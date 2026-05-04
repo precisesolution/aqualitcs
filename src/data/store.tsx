@@ -13,6 +13,7 @@ interface PersistedContact {
   lastTouch?: string;
   meeting?: Contact['meeting'];
   updates?: UpdateEntry[];
+  thread?: Contact['thread'];
 }
 
 function migrateV1(stored: PersistedContact[]): PersistedContact[] {
@@ -58,6 +59,7 @@ function load(): Contact[] {
         lastTouch: persisted.lastTouch ?? seed.lastTouch,
         meeting: persisted.meeting ?? seed.meeting,
         updates: persisted.updates ?? seed.updates,
+        thread: persisted.thread ?? seed.thread,
       };
     });
   } catch {
@@ -67,7 +69,7 @@ function load(): Contact[] {
 
 function persist(contacts: Contact[]) {
   if (typeof window === 'undefined') return;
-  const slim: PersistedContact[] = contacts.map(({ id, status, owner, notes, lastTouch, meeting, updates }) => ({
+  const slim: PersistedContact[] = contacts.map(({ id, status, owner, notes, lastTouch, meeting, updates, thread }) => ({
     id,
     status,
     owner,
@@ -75,6 +77,7 @@ function persist(contacts: Contact[]) {
     lastTouch,
     meeting,
     updates,
+    thread,
   }));
   localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
 }
@@ -125,6 +128,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                   lastTouch: p.lastTouch ?? c.lastTouch,
                   meeting: p.meeting === null ? undefined : p.meeting ?? c.meeting,
                   updates: p.updates ?? c.updates,
+                  thread: p.thread === null ? undefined : p.thread ?? c.thread,
                 }
               : c
           )

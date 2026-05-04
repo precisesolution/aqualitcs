@@ -1,21 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Copy, ExternalLink, Loader2, RefreshCw, Sparkles, X } from 'lucide-react';
+import { Copy, ExternalLink, Loader2, RefreshCw, Send, Sparkles, X } from 'lucide-react';
 import type { Contact, EmailDraft } from '../types';
 import { useSettings } from '../data/settings';
 import { useStore } from '../data/store';
 import { draftEmail } from '../lib/anthropic';
 import { gmailComposeUrl, mailtoUrl } from '../lib/gmail';
+import { isTokenValid, sendGmailMessage } from '../lib/google';
 
 interface Props {
   contact: Contact | null;
   onClose: () => void;
 }
-
-const KIND_BADGE: Record<string, string> = {
-  loading: 'bg-wave-50 text-wave-700 border-wave-200',
-  ready: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  error: 'bg-red-50 text-red-700 border-red-200',
-};
 
 export function DraftEmailModal({ contact, onClose }: Props) {
   const { settings } = useSettings();
@@ -24,6 +19,7 @@ export function DraftEmailModal({ contact, onClose }: Props) {
   const [error, setError] = useState<string>('');
   const [draft, setDraft] = useState<EmailDraft>({ subject: '', body: '' });
   const [extra, setExtra] = useState('');
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (contact) {
@@ -35,6 +31,9 @@ export function DraftEmailModal({ contact, onClose }: Props) {
   }, [contact?.id]);
 
   if (!contact) return null;
+
+  const googleSignedIn =
+    isTokenValid(settings.googleAccessTokenExpiry) && !!settings.googleAccessToken;
 
   async function generate() {
     if (!contact) return;
@@ -60,7 +59,7 @@ export function DraftEmailModal({ contact, onClose }: Props) {
     }
   }
 
-  function markSent(via: 'gmail' | 'mailto' | 'manual') {
+  function logSent(via: 'gmail-api' | 'gmail-compose' | 'mailto') {
     if (!contact) return;
     const today = new Date().toISOString().slice(0, 10);
     addUpdate(
@@ -71,20 +70,58 @@ export function DraftEmailModal({ contact, onClose }: Props) {
     patch(contact.id, { status: 'Emailed', lastTouch: today });
   }
 
-  function openGmail() {
+  async function sendViaGmail() {
+    if (!contact?.email) {
+      setError('Contact has no email address.');
+      return;
+    }
+    if (!settings.googleAccessToken || !settings.fromEmail) {
+      setError('Sign in with Google in Settings first, and set your From email.');
+      return;
+    }
+    setSending(true);
+    setError('');
+    try {
+      const result = await sendGmailMessage({
+        accessToken: settings.googleAccessToken,
+        from: settings.fromEmail,
+        to: contact.email,
+        subject: draft.subject,
+        body: draft.body,
+      });
+      patch(contact.id, {
+        status: 'Emailed',
+        lastTouch: new Date().toISOString().slice(0, 10),
+        thread: {
+          threadId: result.threadId,
+          messageIdHeader: result.messageIdHeader,
+          subject: draft.subject,
+          lastChecked: new Date().toISOString(),
+        },
+      });
+      logSent('gmail-api');
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  function openGmailCompose() {
     if (!draft.subject || !draft.body) return;
     const url = gmailComposeUrl({
       to: contact?.email,
       draft,
       fromAccount: settings.fromEmail || undefined,
     });
-    markSent('gmail');
+    logSent('gmail-compose');
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 
   function openMailto() {
     if (!draft.subject || !draft.body) return;
-    markSent('mailto');
+    logSent('mailto');
     window.location.href = mailtoUrl({ to: contact?.email, draft });
   }
 
@@ -110,6 +147,11 @@ export function DraftEmailModal({ contact, onClose }: Props) {
               To <span className="font-medium text-ink-800">{contact.name}</span>
               {contact.email && <span className="text-ink-500"> · {contact.email}</span>}
               <span className="text-ink-400"> · model: {settings.model}</span>
+              {googleSignedIn && (
+                <span className="ml-2 pill bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">
+                  Gmail send ready
+                </span>
+              )}
             </p>
           </div>
           <button onClick={onClose} className="btn-ghost p-1">
@@ -128,7 +170,7 @@ export function DraftEmailModal({ contact, onClose }: Props) {
                   value={extra}
                   onChange={(e) => setExtra(e.target.value)}
                   rows={3}
-                  placeholder="Anything specific to mention? (warm intro, mutual contact, today's seminar, etc.) — optional"
+                  placeholder="Anything specific to mention? (warm intro, mutual contact, today's seminar, etc.)"
                   className="input mt-1 text-[13px]"
                 />
               </label>
@@ -167,8 +209,8 @@ export function DraftEmailModal({ contact, onClose }: Props) {
             </div>
           )}
 
-          {status === 'error' && (
-            <div className={`pill ${KIND_BADGE.error} block px-3 py-2 text-[12px]`}>
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-md px-3 py-2 text-[12px]">
               {error}
             </div>
           )}
@@ -197,8 +239,7 @@ export function DraftEmailModal({ contact, onClose }: Props) {
                 />
               </label>
               <p className="text-[11px] text-ink-400">
-                Edit anything before sending. Replace any {`[bracketed]`} placeholders with the right
-                values.
+                Edit anything before sending. Replace any [bracketed] placeholders.
               </p>
             </div>
           )}
@@ -213,12 +254,34 @@ export function DraftEmailModal({ contact, onClose }: Props) {
               <Copy className="w-3.5 h-3.5" /> Copy
             </button>
             <div className="flex-1" />
-            <button onClick={openMailto} className="btn-outline text-xs">
-              <ExternalLink className="w-3.5 h-3.5" /> Mail app
-            </button>
-            <button onClick={openGmail} className="btn-primary">
-              <ExternalLink className="w-4 h-4" /> Open in Gmail
-            </button>
+            {googleSignedIn ? (
+              <>
+                <button onClick={openGmailCompose} className="btn-outline text-xs" title="Open in Gmail compose to review/edit">
+                  <ExternalLink className="w-3.5 h-3.5" /> Review in Gmail
+                </button>
+                <button
+                  onClick={sendViaGmail}
+                  disabled={sending || !contact.email || !settings.fromEmail}
+                  className="btn-primary disabled:opacity-50"
+                >
+                  {sending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  {sending ? 'Sending…' : 'Send via Gmail'}
+                </button>
+              </>
+            ) : (
+              <>
+                <button onClick={openMailto} className="btn-outline text-xs">
+                  <ExternalLink className="w-3.5 h-3.5" /> Mail app
+                </button>
+                <button onClick={openGmailCompose} className="btn-primary">
+                  <ExternalLink className="w-4 h-4" /> Open in Gmail
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
