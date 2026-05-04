@@ -305,6 +305,172 @@ Pick the best slot.`;
   return JSON.parse(text.text) as PickedSlot;
 }
 
+export async function generateBriefing(
+  contact: Contact,
+  settings: Settings
+): Promise<string> {
+  if (!settings.apiKey) throw new Error('No Anthropic API key set.');
+  const client = getClient(settings.apiKey);
+
+  const userName = settings.userName.trim() || '[Your name]';
+
+  const systemPrompt = `You write pre-meeting briefing documents for a Northwestern student who is about to walk into an in-person meeting with a faculty member, on behalf of a mentor named Philipp Grötsch (Aqualytics, water-quality monitoring consultancy).
+
+The briefing must be:
+- Skim-able in 90 seconds while walking to the meeting room
+- Structured in the EXACT order the student needs as they enter the room and start the conversation
+- Professional and specific (not generic platitudes)
+- Output as Markdown with the section structure below — no preamble, no closing remarks
+- The student admits they haven't done a lot of recent work on Aqualytics, so the "Aqualytics refresher" section is important
+
+# About Aqualytics (use this in the refresher section)
+- Founded by Philipp Grötsch (PhD water-quality remote sensing, ex-CTO of Gybe)
+- Water-quality monitoring consultancy: satellite imagery + on-the-ground sensors
+- Has IP for a continuous water-quality instrument at ~10% the cost of existing solutions
+- Target customers: NGOs (TNC, WWF), development banks (World Bank, IDB), research orgs (NASA, universities), restoration firms, utilities
+- The mentor's open questions for these conversations:
+  1. What new markets/use cases open up at 10% the price?
+  2. Sweet spot of data quality vs price?
+  3. Sweet spot of raw sensor readings vs interpreted output (e.g. bloom forecasts)?
+  4. Individual sensors vs distributed sensor networks?
+  5. Value of complementary satellite data?
+  6. Are users OK sharing data with regional neighbors?
+
+# REQUIRED MARKDOWN STRUCTURE (use these exact section titles in this exact order)
+
+# Briefing — [Contact name]
+
+**Meeting with:** [Title, Department]
+**Today:** [today's date in long form]
+**Prepared for:** ${userName}
+
+## 30 seconds before you knock
+
+A 4-5 sentence paragraph the student should read literally walking up to the door:
+- One sentence: who they are
+- One sentence: why this conversation matters to Aqualytics
+- One sentence: the strongest thing to lead with
+- One sentence: the single biggest question to make sure to ask
+
+## Aqualytics refresher (re-orient yourself)
+
+5 short bullets summarizing what Aqualytics is and what the mentor wants from these conversations.
+
+## Who they are
+
+3-5 short bullets: title, key affiliations, signature accomplishments, anything notable (grant, fellowship, leadership role).
+
+## What they've done
+
+For each paper/project provided, ONE bullet of the form:
+- **Paper title** *(venue, year)* — one-line takeaway: what's the finding and why does it matter for Aqualytics
+
+## Why this conversation matters
+
+A 2-3 sentence paragraph stating crisply why THIS person × Aqualytics is interesting (not generic — specific to them).
+
+## Opening line (read verbatim if you want)
+
+A 2-3 sentence opener in the student's voice, spoken aloud while shaking hands. Names the mentor, names a specific paper or project of theirs, asks for 25 minutes.
+
+## Questions to ask, in order
+
+8-10 questions the student should ask, ordered from "warm-up" to "deep". Each question:
+- Tailored to their specific work or role (no generic "what do you do" questions)
+- One bullet, one short paragraph each (1-2 sentences max)
+- Mix: 2 about their work, 4-5 mapping to Aqualytics' open questions, 1 about commercialization/buyers, 1 asking who else to talk to (intro request)
+
+## Watch-outs
+
+2-3 short bullets — sensitivities, things NOT to say, possible objections. Be honest if there's no major risk.
+
+## Logistics
+
+- Where: [office]
+- Hours / scheduled time: [from data]
+- Phone: [from data]
+- Email: [from data]
+
+## Notes (fill in during/after)
+
+A blank section header with 5-6 horizontal rules (---) so the student can write under it if printing.
+
+---
+
+Output the markdown directly. Do not wrap in code fences. Do not say "Here is the briefing".`;
+
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const userPromptParts: string[] = [];
+  userPromptParts.push(`Today's date: ${today}`);
+  userPromptParts.push(``);
+  userPromptParts.push(`# Contact data`);
+  userPromptParts.push(`Name: ${contact.name}`);
+  userPromptParts.push(`Title: ${contact.title}`);
+  userPromptParts.push(`Department: ${contact.department}`);
+  userPromptParts.push(`Email: ${contact.email ?? '(not on file)'}`);
+  userPromptParts.push(`Phone: ${contact.phone ?? '(not on file)'}`);
+  userPromptParts.push(`Office: ${contact.officeLocation ?? '(not on file)'}`);
+  userPromptParts.push(`Office hours / scheduled: ${contact.officeHours ?? '(not on file)'}`);
+  if (contact.meeting) {
+    userPromptParts.push(
+      `Scheduled meeting: ${contact.meeting.date} ${contact.meeting.start}-${contact.meeting.end}${contact.meeting.link ? ` (link: ${contact.meeting.link})` : ''}`
+    );
+  }
+  userPromptParts.push('');
+  userPromptParts.push(`# Why-fit (analyst's note)`);
+  userPromptParts.push(contact.whyFit);
+  userPromptParts.push('');
+  userPromptParts.push(`# Aqualytics angle tags`);
+  userPromptParts.push(contact.angles.join(', '));
+  if (contact.papers && contact.papers.length > 0) {
+    userPromptParts.push('');
+    userPromptParts.push(`# Their papers / work`);
+    for (const p of contact.papers) {
+      userPromptParts.push(`- "${p.title}" — ${p.venue}, ${p.year}`);
+    }
+  }
+  if (contact.talkingPoints && contact.talkingPoints.length > 0) {
+    userPromptParts.push('');
+    userPromptParts.push(`# Existing talking points (use as a base; expand/adapt)`);
+    for (const tp of contact.talkingPoints) {
+      userPromptParts.push(`- ${tp}`);
+    }
+  }
+  if (contact.opener) {
+    userPromptParts.push('');
+    userPromptParts.push(`# Existing opener (revise to be more natural)`);
+    userPromptParts.push(contact.opener);
+  }
+  if (contact.updates && contact.updates.length > 0) {
+    userPromptParts.push('');
+    userPromptParts.push(`# Recent updates from prior interactions (most recent first)`);
+    for (const u of contact.updates.slice(0, 5)) {
+      userPromptParts.push(`- [${u.kind} · ${new Date(u.timestamp).toLocaleDateString()}] ${u.text.split('\n')[0].slice(0, 200)}`);
+    }
+  }
+  userPromptParts.push('');
+  userPromptParts.push('Now write the briefing per the structure in the system prompt. Markdown only.');
+
+  const response = await client.messages.create({
+    model: settings.model || 'claude-opus-4-7',
+    max_tokens: 3500,
+    system: [
+      { type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } },
+    ],
+    messages: [{ role: 'user', content: userPromptParts.join('\n') }],
+  } as Anthropic.MessageCreateParamsNonStreaming);
+
+  const text = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
+  if (!text) throw new Error('Briefing generator returned no text.');
+  return text.text;
+}
+
 export async function testApiKey(apiKey: string, model: string): Promise<{ ok: true; cached?: boolean } | { ok: false; error: string }> {
   if (!apiKey) return { ok: false, error: 'No API key provided.' };
   try {
