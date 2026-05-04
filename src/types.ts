@@ -76,7 +76,21 @@ export interface Contact {
   walkInDay?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
 }
 
-export type UpdateKind = 'walk-in' | 'email' | 'reply' | 'meeting' | 'note';
+export type UpdateKind = 'walk-in' | 'email' | 'email-draft' | 'reply' | 'meeting' | 'note';
+
+export interface EmailDraft {
+  subject: string;
+  body: string;
+}
+
+export interface Settings {
+  apiKey: string;
+  model: string;
+  userName: string;
+  userSignature: string;
+  voiceSamples: string;
+  fromEmail: string;
+}
 
 export interface UpdateEntry {
   id: string;

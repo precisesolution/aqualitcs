@@ -4,6 +4,7 @@ import { Today } from './views/Today';
 import { CalendarView } from './views/CalendarView';
 import { Contacts } from './views/Contacts';
 import { Templates } from './views/Templates';
+import { Settings } from './views/Settings';
 
 export function App() {
   return (
@@ -14,6 +15,7 @@ export function App() {
         <Route path="/calendar" element={<CalendarView />} />
         <Route path="/contacts" element={<Contacts />} />
         <Route path="/templates" element={<Templates />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes>
   );

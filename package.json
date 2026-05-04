@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.92.0",
     "date-fns": "^3.6.0",
     "lucide-react": "^0.439.0",
     "react": "^18.3.1",

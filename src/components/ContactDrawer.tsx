@@ -9,17 +9,20 @@ import {
   Trash2,
   Plus,
   Copy,
+  Sparkles,
 } from 'lucide-react';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import type { Owner, Status, UpdateKind } from '../types';
 import { STATUS_OPTIONS, UPDATE_KINDS, useStore } from '../data/store';
 import { FitBadge, StatusBadge } from './Badges';
+import { DraftEmailModal } from './DraftEmailModal';
 
 const OWNERS: Owner[] = ['Me', 'Collaborator', 'Unassigned'];
 
 const KIND_STYLES: Record<UpdateKind, string> = {
   'walk-in': 'bg-wave-50 text-wave-700 border-wave-200',
   email: 'bg-violet-50 text-violet-700 border-violet-200',
+  'email-draft': 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200',
   reply: 'bg-sky-50 text-sky-700 border-sky-200',
   meeting: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   note: 'bg-ink-50 text-ink-600 border-ink-200',
@@ -95,6 +98,7 @@ export function ContactDrawer({ contactId, onClose }: Props) {
   }
 
   const updates = contact.updates ?? [];
+  const [draftOpen, setDraftOpen] = useState(false);
 
   return (
     <>
@@ -104,18 +108,26 @@ export function ContactDrawer({ contactId, onClose }: Props) {
         aria-label="Close drawer"
       />
       <aside className="fixed right-0 top-0 bottom-0 w-[560px] bg-white z-50 shadow-2xl border-l border-ink-200 overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-ink-100 px-6 py-4 flex items-start justify-between gap-3 z-10">
-          <div>
-            <h2 className="font-semibold text-lg leading-tight">{contact.name}</h2>
-            <p className="text-sm text-ink-500 mt-0.5">{contact.title}</p>
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <FitBadge fit={contact.fit} />
-              <StatusBadge status={contact.status} />
-              <span className="pill bg-ink-50 text-ink-600 border-ink-200">{contact.department}</span>
+        <div className="sticky top-0 bg-white border-b border-ink-100 px-6 py-4 z-10">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="font-semibold text-lg leading-tight">{contact.name}</h2>
+              <p className="text-sm text-ink-500 mt-0.5">{contact.title}</p>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <FitBadge fit={contact.fit} />
+                <StatusBadge status={contact.status} />
+                <span className="pill bg-ink-50 text-ink-600 border-ink-200">{contact.department}</span>
+              </div>
             </div>
+            <button onClick={onClose} className="btn-ghost p-1">
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button onClick={onClose} className="btn-ghost p-1">
-            <X className="w-5 h-5" />
+          <button
+            onClick={() => setDraftOpen(true)}
+            className="btn-primary w-full mt-3"
+          >
+            <Sparkles className="w-4 h-4" /> Draft email with AI
           </button>
         </div>
 
@@ -392,6 +404,7 @@ export function ContactDrawer({ contactId, onClose }: Props) {
           </section>
         </div>
       </aside>
+      {draftOpen && <DraftEmailModal contact={contact} onClose={() => setDraftOpen(false)} />}
     </>
   );
 }
