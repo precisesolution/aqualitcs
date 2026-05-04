@@ -74,9 +74,55 @@ export interface Contact {
   lastTouch?: string;
   walkInTimeBlock?: 'morning' | 'afternoon-A' | 'afternoon-F' | 'late';
   walkInDay?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  thread?: EmailThread;
 }
 
-export type UpdateKind = 'walk-in' | 'email' | 'reply' | 'meeting' | 'note';
+export type UpdateKind =
+  | 'walk-in'
+  | 'email'
+  | 'email-draft'
+  | 'reply'
+  | 'meeting'
+  | 'note'
+  | 'system';
+
+export interface EmailDraft {
+  subject: string;
+  body: string;
+}
+
+export interface EmailThread {
+  threadId: string;
+  messageIdHeader?: string;
+  subject: string;
+  lastChecked?: string;
+  lastReplyAt?: string;
+  replyClassification?: ReplyClassification;
+}
+
+export type ReplyIntent = 'yes' | 'no' | 'reschedule' | 'redirect' | 'info' | 'unclear';
+
+export interface ReplyClassification {
+  intent: ReplyIntent;
+  summary: string;
+  suggestedAction: string;
+  proposedTimes?: string[];
+}
+
+export interface Settings {
+  apiKey: string;
+  model: string;
+  userName: string;
+  userSignature: string;
+  voiceSamples: string;
+  fromEmail: string;
+  googleClientId: string;
+  googleAccessToken?: string;
+  googleAccessTokenExpiry?: number;
+  googleEmail?: string;
+  meetDurationMinutes?: number;
+  meetTimezone?: string;
+}
 
 export interface UpdateEntry {
   id: string;
@@ -100,4 +146,5 @@ export interface ContactPatch {
   lastTouch?: string;
   meeting?: Meeting | null;
   updates?: UpdateEntry[];
+  thread?: EmailThread | null;
 }

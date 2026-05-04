@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { CalendarDays, Droplets, FileText, Layers, ListTodo, RotateCcw } from 'lucide-react';
+import { CalendarDays, Droplets, FileText, Layers, ListTodo, RotateCcw, Settings as SettingsIcon } from 'lucide-react';
 import { useStore } from '../data/store';
 
 const NAV = [
@@ -7,6 +7,7 @@ const NAV = [
   { to: '/calendar', label: 'Calendar', icon: CalendarDays },
   { to: '/contacts', label: 'Contacts', icon: Layers },
   { to: '/templates', label: 'Templates', icon: FileText },
+  { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
 export function Layout() {
